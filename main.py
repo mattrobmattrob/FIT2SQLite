@@ -2,6 +2,7 @@
 from dis import dis
 from fitparse import FitFile
 import argparse
+import glob
 import gzip
 import shutil
 import sqlite3
@@ -29,17 +30,18 @@ def parse_fit_file(fit_file_path, db_connection, db_cursor):
     fit_file =  FitFile(fit_file_path)
     for record in fit_file.get_messages('record'):
         def get_message_named(name):
-            return ([record_data for record_data in record if record_data.name == name] or [None])[0]
+            message = ([record_data for record_data in record if record_data.name == name] or [None])[0]
+            return message.value if message else None
 
         # Print types of messages for searching below.
         # for record_data in record:
         #     print(record_data.name)
 
-        timestamp = get_message_named("timestamp").value
-        position_lat = get_message_named("position_lat").value
-        position_long = get_message_named("position_long").value
-        heart_rate = get_message_named("heart_rate").value
-        distance = get_message_named("distance").value
+        timestamp = get_message_named("timestamp")
+        position_lat = get_message_named("position_lat")
+        position_long = get_message_named("position_long")
+        heart_rate = get_message_named("heart_rate")
+        distance = get_message_named("distance")
 
         print(" * {}: timestamp: {}, latlng: ({}, {}), hr: {}, distance (m): {}".format(
             input_file_id, timestamp, position_lat, position_long, heart_rate, distance
@@ -57,15 +59,17 @@ def parse_fit_file(fit_file_path, db_connection, db_cursor):
 
 if __name__ == "__main__":
     parser = argparse.ArgumentParser()
-    parser.add_argument('--fit_file', type=str, required=True)
+    parser.add_argument('--fit_file_dir', type=str, required=True)
     parser.add_argument('--database', type=str, required=True)
 
     args = parser.parse_args()
-    input_fit_file = args.fit_file
+    input_fit_file_dir = args.fit_file_dir
     input_database = args.database
-    if not os.path.exists(input_fit_file) or not os.path.exists(input_database):
+    if not os.path.exists(input_fit_file_dir) or not os.path.exists(input_database):
         raise Exception("'input_fit_file' and 'database' must exist")
 
-    output_fit_file = decompress_fit_gz(input_fit_file)
-    db_connection, db_cursor = create_table()
-    parse_fit_file(output_fit_file, db_connection, db_cursor)
+    for fit_file in glob.glob(input_fit_file_dir + '/*.fit.gz'):
+        print("Processing '{}'".format(fit_file))
+        output_fit_file = decompress_fit_gz(fit_file)
+        db_connection, db_cursor = create_table()
+        parse_fit_file(output_fit_file, db_connection, db_cursor)
