@@ -26,7 +26,7 @@ def create_table():
     db_connection.execute('''CREATE TABLE IF NOT EXISTS activities (file_id, timestamp text, lat text, long text, heart_rate real, distance real)''')
     return (db_connection, db_cursor)
 
-def parse_fit_file(fit_file_path, db_connection, db_cursor):
+def parse_fit_file(fit_file_path, db_connection, db_cursor, verbose):
     input_file_id = os.path.basename(fit_file_path).split('/')[-1].split('.fit')[0]
     fit_file =  FitFile(fit_file_path)
 
@@ -45,9 +45,10 @@ def parse_fit_file(fit_file_path, db_connection, db_cursor):
         heart_rate = get_message_named("heart_rate")
         distance = get_message_named("distance")
 
-        print(" * {}: timestamp: {}, latlng: ({}, {}), hr: {}, distance (m): {}".format(
-            input_file_id, timestamp, position_lat, position_long, heart_rate, distance
-        ))
+        if verbose:
+            print(" * {}: timestamp: {}, latlng: ({}, {}), hr: {}, distance (m): {}".format(
+                input_file_id, timestamp, position_lat, position_long, heart_rate, distance
+            ))
 
         # Run the SQL insertion
         data_insert = """INSERT INTO activities
@@ -67,6 +68,7 @@ if __name__ == "__main__":
     args = parser.parse_args()
     input_fit_file_dir = args.fit_file_dir
     input_database = args.database
+
     if not os.path.exists(input_fit_file_dir) or not os.path.exists(input_database):
         raise Exception("'input_fit_file' and 'database' must exist")
 
@@ -76,6 +78,6 @@ if __name__ == "__main__":
         db_connection, db_cursor = create_table()
 
         try:
-            parse_fit_file(output_fit_file, db_connection, db_cursor)
+            parse_fit_file(output_fit_file, db_connection, db_cursor, False)
         except FitCRCError:
             print("  Skipping '{}' due to 'FitCRCError'".format(fit_file))
