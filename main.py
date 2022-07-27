@@ -23,7 +23,7 @@ def decompress_fit_gz(input_fit_file):
 def create_table():
     db_connection = sqlite3.connect(input_database)
     db_cursor = db_connection.cursor()
-    db_connection.execute('''CREATE TABLE IF NOT EXISTS activities (file_id, timestamp timestamp, lat int, long int, heart_rate int, distance real)''')
+    db_connection.execute('''CREATE TABLE IF NOT EXISTS activities (file_id, timestamp timestamp, lat real, long real, heart_rate int, distance real)''')
     return (db_connection, db_cursor)
 
 def parse_fit_file(fit_file_path, db_connection, db_cursor, verbose):
