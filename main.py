@@ -79,5 +79,3 @@ if __name__ == "__main__":
             parse_fit_file(output_fit_file, db_connection, db_cursor)
         except FitCRCError:
             print("  Skipping '{}' due to 'FitCRCError'".format(fit_file))
-
-        
