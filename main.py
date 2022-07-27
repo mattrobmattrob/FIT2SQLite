@@ -1,6 +1,7 @@
 
 from dis import dis
 from fitparse import FitFile
+from fitparse.utils import FitCRCError
 import argparse
 import glob
 import gzip
@@ -28,6 +29,7 @@ def create_table():
 def parse_fit_file(fit_file_path, db_connection, db_cursor):
     input_file_id = os.path.basename(fit_file_path).split('/')[-1].split('.fit')[0]
     fit_file =  FitFile(fit_file_path)
+
     for record in fit_file.get_messages('record'):
         def get_message_named(name):
             message = ([record_data for record_data in record if record_data.name == name] or [None])[0]
@@ -72,4 +74,10 @@ if __name__ == "__main__":
         print("Processing '{}'".format(fit_file))
         output_fit_file = decompress_fit_gz(fit_file)
         db_connection, db_cursor = create_table()
-        parse_fit_file(output_fit_file, db_connection, db_cursor)
+
+        try:
+            parse_fit_file(output_fit_file, db_connection, db_cursor)
+        except FitCRCError:
+            print("  Skipping '{}' due to 'FitCRCError'".format(fit_file))
+
+        
